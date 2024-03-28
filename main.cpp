@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string.h>
 
+/* HAVE TO ADD in.txt FILE TO CMAKE EACH TIME REPOSITORY IS CLONED */
 using namespace std;
 
 class itemNode
@@ -54,60 +55,12 @@ public:
     }
 };
 
-class treeName{
+class treeName {
 public:
-    treeNameNode* root;
+    treeNameNode *root;
 
     treeName() : root(nullptr) {}
-
-    //always checks if string1 is greater than string two
-    //i.e. if it returns false if string2 is bigger, but if it returns true then string1 is bigger
-    bool compareStrings(const string string1, const string string2){
-
-        char sone;
-        char stwo;
-        int i = 0;
-
-        bool answer;
-        if(string1.length() < string2.length())
-            answer = false;
-        else
-            answer = true;
-        do{
-            sone = string1[i];
-            stwo = string2[i];
-            i++;
-            if(sone > stwo){
-                return true;
-            }
-            else if(sone < stwo){
-                return false;
-            }
-            else
-                continue;
-
-
-        } while(string1[i++] != '\0' && string2[i++] != '\0');
-
-        return answer;
-
-    }
-    //searches if an item exists
-    void search(const char type[],const string item){
-
-        treeNameNode* tree = findTreeName(type,root);
-        if(tree == nullptr){
-            cout<<"\nTree does not exist\n";
-            return;
-        }
-        itemNode* itemN = findItem(item, tree->theTree);
-        if(itemN == nullptr){
-            cout<<"\nItem does not exist\n";
-            return;
-        }
-        cout<<itemN->name<<": count: "<<itemN->count<<endl;
-    }
-    //searches for a NameTree
+};
     treeNameNode* findTreeName(const char type[], treeNameNode* roo) {
         if(roo->treeName == type){
             return roo;
@@ -123,6 +76,7 @@ public:
         }
         return nullptr;
     }
+
     //Searches for an item using the root of the nameTree
     itemNode* findItem(const string item, itemNode* next){
         if(next->name == item){
@@ -140,6 +94,24 @@ public:
         }
         return nullptr;
     }
+    //searches if an item exists
+    void search(const char type[],const string item,treeName* root){
+
+        treeNameNode* tree = findTreeName(type,root->root);
+        if(tree == nullptr){
+            cout<<"\nTree does not exist\n";
+            return;
+        }
+        itemNode* itemN = findItem(item, tree->theTree);
+        if(itemN == nullptr){
+            cout<<"\nItem does not exist\n";
+            return;
+        }
+        cout<<itemN->name<<": count: "<<itemN->count<<endl;
+    }
+    //searches for a NameTree
+
+
     //Inorder traversal of the item trees
     void inOrder(itemNode* root, string* arr ,int index){
         if(root == nullptr){
@@ -159,8 +131,8 @@ public:
 
     }
     //prints all the items that come alphabetically before the item inserted
-    void item_before(const char type[], const string item) {
-        treeNameNode *treeNode = findTreeName(type, root);
+    void item_before(const char type[], const string item,treeName* root) {
+        treeNameNode *treeNode = findTreeName(type, root->root);
         if (treeNode != nullptr) {
             itemNode *itemnode = findItem(item, treeNode->theTree);
             if (itemnode != nullptr) {
@@ -213,9 +185,6 @@ public:
 
 
 
-
-};
-
 void createTreeName(treeName* Tree, char treetype[]){
     treeNameNode* mainTree = Tree->root;
     if(mainTree == nullptr){
@@ -266,11 +235,11 @@ void treeinOrder(treeName* root){
     inOrder(root->root);
 }
 
-void addItem(treeName* Tree, char type[],char item[],int count){
-    treeNameNode* treeType = Tree->findTreeName(type,Tree->root);
-    itemNode* itemTree = treeType->theTree;
+void addItem(treeNameNode* Tree, char type[],char item[],int count){
+
+    itemNode* itemTree = Tree->theTree;
     if(itemTree == nullptr){
-        treeType->theTree = new itemNode(item,count);
+        Tree->theTree = new itemNode(item,count);
         printf("Root added successfully\n");
         return;
     }
@@ -323,10 +292,13 @@ int main() {
         createTreeName(Tree,word1);
         n++;
     }
-    while(i<totalItems){
-        fscanf(infile, "%s %s %d",word1,word2,&count);
-        printf("%d",count);
-        addItem(Tree,word1,word2,count);
+    //while(i<totalItems){
+   //     fscanf(infile, "%s %s %d",word1,word2,&count);
+  //      treeNameNode* typeTree = findTreeName(word1,Tree->root);
+   //     cout<<"Here\n";
+   //     printf("%s belongs to the tree %s",word2,typeTree->treeName);
+   //     cout<<"Here2\n";
+   //    // addItem(Tree,word1,word2,count);
         i++;
     }
 
@@ -353,7 +325,7 @@ int main() {
 
     */
 
-    //cout<<Tree->root->right->treeName;
+    //treeinOrder(Tree);
     delete Tree;
     fin.close();
 
