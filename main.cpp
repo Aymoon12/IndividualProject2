@@ -1,15 +1,19 @@
 #include <iostream>
-#include <cstring>
 #include <fstream>
 #include <string.h>
 
-/* HAVE TO ADD in.txt FILE TO CMAKE EACH TIME REPOSITORY IS CLONED */
+
+/* HAVE TO ADD in.txt FILE TO CMAKE EACH TIME REPOSITORY IS CLONED
+ * ALSO KEEP IN MIND THAT THE PROGRAM WRITES TO THE OUTPUT FILE IN CMAKE IF USING CLION */
 using namespace std;
+
+
+ofstream myFile("out.txt");
 
 class itemNode
 {
 public:
-    char name[50];
+    char name[50]{};
     int count;
     itemNode *left, *right;
 
@@ -34,7 +38,7 @@ public:
 class treeNameNode
 {
 public:
-    char treeName[50];
+    char treeName[50]{};
     treeNameNode *left, *right;
     itemNode *theTree;
 
@@ -61,159 +65,167 @@ public:
 
     treeName() : root(nullptr) {}
 };
-    treeNameNode* findTreeName(const char type[], treeNameNode* roo) {
-        if(roo->treeName == type){
-            return roo;
-        }
 
-        treeNameNode* leftTree = findTreeName(type,roo->left);
-        if(leftTree != nullptr){
-            return leftTree;
-        }
-        treeNameNode* rightTree = findTreeName(type,roo->right);
-        if(rightTree != nullptr){
-            return rightTree;
+
+
+    //My replacement for the searchNameNode function
+    treeNameNode* findTreeName(const char type[], treeNameNode* roo) {
+        while(roo){
+
+            if(strcmp(roo->treeName,type) == 0)
+                return roo;
+
+            bool rootBigger = strcmp(roo->treeName, type) > 0;
+            if(rootBigger){
+                roo = roo->left;
+            }
+            else
+                roo=roo->right;
         }
         return nullptr;
     }
+
 
     //Searches for an item using the root of the nameTree
-    itemNode* findItem(const string item, itemNode* next){
-        if(next->name == item){
-            return next;
-        }
+    itemNode* findItem(const char item[], itemNode* next){
+        while(next){
 
-        itemNode* leftTree = findItem(item,next->left);
-        if(leftTree != nullptr){
-            return leftTree;
-        }
+            if(strcmp(next->name,item) == 0)
+                return next;
 
-        itemNode* rightTree = findItem(item,next->right);
-        if(rightTree != nullptr){
-            return rightTree;
+            bool rootBigger = strcmp(next->name, item) > 0;
+            if(rootBigger){
+                next = next->left;
+            }
+            else
+                next=next->right;
         }
         return nullptr;
     }
+
     //searches if an item exists
-    void search(const char type[],const string item,treeName* root){
+    void search(char type[],char item[],treeName* root){
 
         treeNameNode* tree = findTreeName(type,root->root);
         if(tree == nullptr){
-            cout<<"\nTree does not exist\n";
+            cout<<""<< type<< " does not exist\n";
+            myFile<<""<< type<< " does not exist\n";
             return;
         }
         itemNode* itemN = findItem(item, tree->theTree);
         if(itemN == nullptr){
-            cout<<"\nItem does not exist\n";
+            cout<<""<<item<<" not found in "<<type<< "\n";
+            myFile<<""<<item<<" not found in "<<type<< "\n";
             return;
         }
-        cout<<itemN->name<<": count: "<<itemN->count<<endl;
-    }
-    //searches for a NameTree
-
-
-    //Inorder traversal of the item trees
-    void inOrder(itemNode* root, string* arr ,int index){
-        if(root == nullptr){
-            return;
-        }
-        inOrder(root->left,arr,index);
-        arr[index] = root->name;
-        index++;
-        inOrder(root->right,arr,index);
-    }
-
-    //converts the item trees into an array with all the names
-    string* itemTreeToArray(itemNode* root){
-        string* itemArray = new string[11];
-        inOrder(root,itemArray,0);
-        return itemArray;
-
-    }
-    //prints all the items that come alphabetically before the item inserted
-    void item_before(const char type[], const string item,treeName* root) {
-        treeNameNode *treeNode = findTreeName(type, root->root);
-        if (treeNode != nullptr) {
-            itemNode *itemnode = findItem(item, treeNode->theTree);
-            if (itemnode != nullptr) {
-                string* itemArray = itemTreeToArray(itemnode);
-                for(int i =0; i<itemArray->length();i++){
-                    if(itemnode->name > itemArray[i]){
-                        cout<<itemArray[i]<< " ";
-                    }
-                }
-            }
-            else
-                return;
-            } else
-                return;
-
-
-        }
-
-    void inOrderCounting(itemNode* root,int index,int* count){
-        if(root == nullptr){
-            return;
-        }
-        inOrderCounting(root->left,index,count);
-        count[index] += root->count;
-        index++;
-        inOrderCounting(root->right,index,count);
-    }
-
-    void countArray(itemNode* root){
-        int* count = new int[11];
-        inOrderCounting(root,0,count);
-        int index = 0;
-        int total = 0;
-        while(true){
-            cout<<count[index] <<" ";
-            total += count[index];
-            index++;
-            if(index < 11 || count[index] < 1000){
-                cout<<"+ ";
-            }
-            else {
-                cout << "= ";
-                break;
-            }
-        }
-        cout<<total<<endl;
-
-
+        cout<<itemN->count<< " " <<itemN->name<< " found in " << type<<endl;
+        myFile<<itemN->count<< " " <<itemN->name<< " found in " << type<<endl;
     }
 
 
 
+
+// Function to count the number of items that come before the input item alphabetically
+int countItemsBefore(itemNode* root, const char item[]) {
+    if (root == nullptr) {
+        return 0;
+    }
+
+
+    if (strcmp(root->name, item) >= 0) {
+        return countItemsBefore(root->left, item);
+    }
+
+
+    return 1 + countItemsBefore(root->left, item) + countItemsBefore(root->right, item);
+}
+
+// Function to print the number of items that come before the input item alphabetically
+void item_before(const char type[], const char item[], treeName* root) {
+    treeNameNode* treeNode = findTreeName(type, root->root);
+    if (treeNode != nullptr && treeNode->theTree != nullptr) {
+        int count = countItemsBefore(treeNode->theTree, item);
+        cout << "Items before " << item  << ": " << count << endl;
+        myFile << "Items before " << item  << ": " << count << endl;
+    } else {
+        cout << "Tree " << type << " does not exist or is empty" << endl;
+        myFile << "Tree " << type << " does not exist or is empty" << endl;
+    }
+}
+
+
+
+// Inorder traversal of the item trees to count items
+int inOrderCounting(itemNode* root) {
+    if (root == nullptr) {
+        return 0;
+    }
+
+    int leftCount = inOrderCounting(root->left);
+    int rightCount = inOrderCounting(root->right);
+
+
+    return leftCount + rightCount + root->count;
+}
+
+// Function to print the counts of all items and return the total count
+int printItemCountsAndGetTotal(itemNode* root) {
+    if (root == nullptr) {
+        return 0;
+    }
+
+    int totalCount = printItemCountsAndGetTotal(root->left) + root->count;
+    return totalCount + printItemCountsAndGetTotal(root->right);
+}
+
+// count command implementation
+int count(const char type[], treeName* root) {
+
+    treeNameNode* treeNode = findTreeName(type, root->root);
+    if (treeNode != nullptr) {
+        int totalCount = printItemCountsAndGetTotal(treeNode->theTree);
+        cout << type <<" count "<< totalCount << endl;
+        myFile << type <<" count "<< totalCount << endl;
+        return totalCount;
+    } else {
+        cout << type << " does not exist" << endl;
+        myFile << type << " does not exist" << endl;
+        return 0;
+    }
+}
+
+
+
+//My replacement from the buildNameTree function
 void createTreeName(treeName* Tree, char treetype[]){
     treeNameNode* mainTree = Tree->root;
     if(mainTree == nullptr){
         Tree->root = new treeNameNode(treetype);
-        printf("Added %s to the tree\n",treetype);
+      //  printf("Added %s to the tree\n",treetype);
         return;
     }
     while (mainTree != nullptr) {
-        // Check if the current node's tree name is greater than the given tree type
+
         bool rootBigger = strcmp(mainTree->treeName, treetype) > 0;
 
-        // If the tree name should go to the left subtree
+
         if (rootBigger) {
-            // If left child is null, insert the node here
+
             if (mainTree->left == nullptr) {
                 mainTree->left = new treeNameNode(treetype);
-                printf("Added %s to the tree\n", treetype);
+            //    printf("Added %s to the tree\n", treetype);
                 return;
             }
-            // Move to the left subtree
+
             mainTree = mainTree->left;
-        } else { // If the tree name should go to the right subtree
-            // If right child is null, insert the node here
+        } else {
+
             if (mainTree->right == nullptr) {
                 mainTree->right = new treeNameNode(treetype);
-                printf("Added %s to the tree\n", treetype);
+              //  printf("Added %s to the tree\n", treetype);
                 return;
             }
-            // Move to the right subtree
+
             mainTree = mainTree->right;
         }
     }
@@ -221,26 +233,12 @@ void createTreeName(treeName* Tree, char treetype[]){
 }
 
 
+void addItem(treeNameNode* Tree,char item[],int count){
 
-
-void inOrder(treeNameNode* root){
-    if(root == nullptr){
-        return;
-    }
-    inOrder(root->left);
-    printf("%s tree \n", root->treeName);
-    inOrder(root->right);
-}
-void treeinOrder(treeName* root){
-    inOrder(root->root);
-}
-
-void addItem(treeNameNode* Tree, char type[],char item[],int count){
-
-    itemNode* itemTree = Tree->theTree;
+   itemNode* itemTree = Tree->theTree;
     if(itemTree == nullptr){
         Tree->theTree = new itemNode(item,count);
-        printf("Root added successfully\n");
+     //   printf("Added %s successfully\n",item);
         return;
     }
     while(itemTree){
@@ -250,7 +248,7 @@ void addItem(treeNameNode* Tree, char type[],char item[],int count){
 
             if(itemTree->left == nullptr){
                 itemTree->left = new itemNode(item,count);
-                printf("Added %s to the item tree",item);
+              //  printf("Added %s successfully\n",item);
                 return;
             }
             itemTree = itemTree->left;
@@ -258,7 +256,7 @@ void addItem(treeNameNode* Tree, char type[],char item[],int count){
         else{
             if(itemTree->right == nullptr){
                 itemTree->right = new itemNode(item,count);
-                printf("Added %s to the item tree", item);
+               // printf("Added %s successfully\n",item);
                 return;
             }
             itemTree = itemTree->right;
@@ -267,6 +265,78 @@ void addItem(treeNameNode* Tree, char type[],char item[],int count){
     }
 
 }
+
+
+// Helper function to print the data of the items in an item tree
+void printItems(itemNode* root) {
+    if (root == nullptr) {
+        return;
+    }
+
+    printItems(root->left);
+    cout <<root->name << " ";
+    myFile << root->name<< " ";
+    printItems(root->right);
+}
+
+// Function to recursively traverse the name tree and print data of each node along with the data of its corresponding item tree
+void traverse_in_traverse(treeNameNode *root) {
+    if (root == nullptr) {
+        return;
+    }
+
+    traverse_in_traverse(root->left);
+    cout << "***"<<root->treeName << "***"<<endl;
+    myFile << "***"<<root->treeName << "***"<<endl;
+    printItems(root->theTree);
+    cout<<endl;
+    myFile<<endl;
+    traverse_in_traverse(root->right);
+}
+
+// Function to calculate the height of a tree
+int calculateHeight(itemNode* root) {
+    if (root == nullptr) {
+        return 0;
+    }
+
+    int leftHeight = calculateHeight(root->left);
+    int rightHeight = calculateHeight(root->right);
+
+    return max(leftHeight, rightHeight) + 1;
+}
+
+// Function to check if a tree is height-balanced
+bool height_balance(const char type[], treeName* root) {
+    treeNameNode* treeNode = findTreeName(type, root->root);
+    if (treeNode != nullptr && treeNode->theTree != nullptr) {
+
+        int leftHeight = calculateHeight(treeNode->theTree->left);
+        int rightHeight = calculateHeight(treeNode->theTree->right);
+
+
+        int heightDifference = abs(leftHeight - rightHeight);
+
+        // Print the heights and the balance status
+        cout <<type <<": left height " << leftHeight << ", right height " << rightHeight << ", difference " << heightDifference;
+        myFile <<type <<": left height " << leftHeight << ", right height " << rightHeight << ", difference " << heightDifference;
+        if (heightDifference > 1) {
+            cout << ", not balanced" << endl;
+            myFile << ", not balanced" << endl;
+            return false;
+        } else {
+            cout << ", balanced" << endl;
+            myFile << ", balanced" << endl;
+            return true;
+        }
+    } else {
+        cout << "Tree not found" << endl;
+        myFile << "Tree not found" << endl;
+        return false;
+    }
+}
+
+
 
 
 int main() {
@@ -278,56 +348,78 @@ int main() {
     int queries;
     char word1[50];
     char word2[50];
-    int count;
-    int readingLine = 1;
-    auto* Tree = new treeName();
-    int n=0;
-    int i=0;
-    int q=0;
-    FILE* infile = fopen("in.txt", "r");
+    char word3[50];
+    int pop;
+    auto *Tree = new treeName();
+    int n = 0;
+    int i = 0;
+    int q = 0;
+    FILE *infile = fopen("in.txt", "r");
     fscanf(infile, "%d %d %d", &treeNames, &totalItems, &queries);
-    cout<<treeNames<<" "<<totalItems<<" "<<queries<<endl;
-    while(n < treeNames){
-        fscanf(infile,"%s",word1);
-        createTreeName(Tree,word1);
+    //cout << treeNames << " " << totalItems << " " << queries << endl;
+    while (n < treeNames) {
+        fscanf(infile, "%s", word1);
+        createTreeName(Tree, word1);
         n++;
     }
-    //while(i<totalItems){
-   //     fscanf(infile, "%s %s %d",word1,word2,&count);
-  //      treeNameNode* typeTree = findTreeName(word1,Tree->root);
-   //     cout<<"Here\n";
-   //     printf("%s belongs to the tree %s",word2,typeTree->treeName);
-   //     cout<<"Here2\n";
-   //    // addItem(Tree,word1,word2,count);
-        i++;
-    }
 
-   /* while(!fin.eof()) {
-        getline(fin, line);
-        size_t spacepos1 = line.find(' ');
-        string line2 = line.substr(spacepos1 + 1, line.length());
-        size_t spacepos2 = line2.find(' ');
-        string line3 = line2.substr(spacepos2 + 1, line.length());
-        string firstWord = line.substr(0, spacepos1);
-        string secondWord = line2.substr(0, spacepos2);
-        string thirdWord = line2.substr(spacepos2 + 1, line2.length());
-        if (readingLine == 1) {
-            treeNames = firstWord;
-            totalItems = secondWord;
-            queries = thirdWord;
-            readingLine++;
-        }
-        else {
-            cout << firstWord << " " << secondWord << endl;
-            createTreeName(Tree, firstWord);
-        }
-    }
 
-    */
+    auto *fishTree = findTreeName("fish", Tree->root);
+    auto *animalTree = findTreeName("animal", Tree->root);
+    auto *fruitTree = findTreeName("fruit", Tree->root);
+    auto *birdTree = findTreeName("bird", Tree->root);
 
-    //treeinOrder(Tree);
+    while(i<totalItems){
+         fscanf(infile, "%s %s %d",word1,word2,&pop);
+         if(strcmp(fishTree->treeName,word1) == 0)
+             addItem(fishTree,word2,pop);
+
+         else if(strcmp(animalTree->treeName,word1) == 0)
+             addItem(animalTree,word2,pop);
+
+         else if(strcmp(fruitTree->treeName,word1) == 0)
+            addItem(fruitTree,word2,pop);
+
+         else if(strcmp(birdTree->treeName,word1) == 0)
+            addItem(birdTree,word2,pop);
+      i++;
+
+}
+    //search("fruit", "adawd",Tree);
+   // item_before("animal","deer",Tree); cout<<"\n";
+   // count("animal",Tree);
+   traverse_in_traverse(Tree->root);
+
+   while(q<queries){
+       if(q == 7 || q == 8 || q==9 || q == 11 || q == 12 || q== 15){
+           fscanf(infile,"%s %s",word1,word2);
+       }
+       else
+           fscanf(infile,"%s %s %s",word1,word2,word3);
+       if(strcmp(word1,"search") == 0){
+           search(word2,word3,Tree);
+
+       }
+       else if(strcmp(word1,"item_before") == 0){
+           item_before(word2, word3,Tree);
+
+
+       }
+       else if(strcmp(word1,"height_balance") == 0){
+           height_balance(word2,Tree);
+
+
+       }
+       else if(strcmp(word1,"count") == 0){
+           count(word2,Tree);
+
+       }
+
+       q++;
+   }
     delete Tree;
     fin.close();
+    myFile.close();
 
 
     return 0;
